@@ -7,6 +7,7 @@ from fyers_services.fyers_ingestion import start_socket_process
 import threading
 import redis.asyncio as aioredis
 import time
+
 r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
 
 @asynccontextmanager
@@ -39,83 +40,84 @@ async def get_lastest_tick():
         return {"error": "No tick data available"}
     
     tick_id , tick_data = last_entry[0]
-    stored = json.loads(tick_data['data'])
-
-    # compute some latency fields if we've stored timestamps
-    fyers_ts = stored.get("fyers_timestamp")
-    script_arrival = stored.get("script_arrival_time")
-    redis_pub = stored.get("redis_publish_time")
-
-    latencies = {}
-    try:
-        if fyers_ts and script_arrival:
-            latencies["fyers_to_system_s"] = script_arrival - fyers_ts
-        if script_arrival and redis_pub:
-            latencies["system_to_redis_s"] = redis_pub - script_arrival
-    except Exception:
-        pass
-
-    return {"tick_id": tick_id, "data": stored, "latencies": latencies}
+    return {"tick_id": tick_id, "data": json.loads(tick_data['data'])}
 
 @app.router.websocket("/ws/live-feed")
 async def websocket_live_feed(websocket: WebSocket):
     await websocket.accept()
     print("Client connected to WebSocket")
     r_async = aioredis.from_url("redis://localhost:6379", decode_responses=True)
-    
+
+    # Build an initial snapshot of subscribed tickers -> last-known data
+    snapshot = {}
+    try:
+        tickers = await r_async.smembers("set:subscribed_tickers")
+        if not tickers:
+            # fallback: discover symbols from recent stream entries
+            recent = await r_async.xrevrange("stream:ticks", count=2000)
+            found = []
+            for _id, data in recent:
+                try:
+                    d = json.loads(data.get("data", "{}"))
+                    symbol = d.get("symbol") or d.get("s")
+                    if symbol and symbol not in found:
+                        found.append(symbol)
+                except Exception:
+                    continue
+            tickers = list(found)
+        else:
+            tickers = list(tickers)
+
+        # Try to fetch latest entry for each ticker from the recent stream
+        if tickers:
+            remaining = set(tickers)
+            recent = await r_async.xrevrange("stream:ticks", count=5000)
+            for _id, data in recent:
+                if not remaining:
+                    break
+                try:
+                    d = json.loads(data.get("data", "{}"))
+                except Exception:
+                    continue
+                sym = d.get("symbol") or d.get("s")
+                if sym and sym in remaining:
+                    snapshot[sym] = {"tick_id": _id, "data": d}
+                    remaining.discard(sym)
+
+        # Send the snapshot to the client immediately
+        await websocket.send_json({"type": "snapshot", "tickers": tickers, "data": snapshot, "ts": time.time()})
+    except Exception as e:
+        print("Error preparing snapshot:", e)
+
     pubsub = r_async.pubsub()
     try:
-        # Subscribe to the channel your ingestor is publishing to
         await pubsub.subscribe("channel:live_feed")
 
         async for message in pubsub.listen():
-            # only handle actual messages
-            if message["type"] == "message":
-                # 'data' contains the json string from fyers
-                raw = message["data"]
+            # ignore subscribe/unsubscribe control messages
+            if message.get("type") != "message":
+                continue
 
-                # server receives it from Redis now
-                server_receive_time = time.time()
+            raw = message.get("data")
+            try:
+                payload = json.loads(raw)
+            except Exception:
+                payload = raw
 
-                try:
-                    obj = json.loads(raw)
-                except Exception:
-                    # send raw if we cannot parse
-                    obj = {"raw": raw}
+            # If payload contains symbol, update snapshot and notify client with per-symbol update
+            symbol = None
+            if isinstance(payload, dict):
+                symbol = payload.get("symbol") or payload.get("s")
+            if symbol:
+                snapshot[symbol] = {"data": payload, "ts": time.time()}
 
-                # add server-side timing fields so client can calculate
-                obj["server_receive_time"] = server_receive_time
-
-                # Compute latencies if possible
-                lat = {}
-                fyers_ts = obj.get("fyers_timestamp")
-                script_arrival = obj.get("script_arrival_time")
-                redis_pub = obj.get("redis_publish_time")
-                try:
-                    if fyers_ts and script_arrival:
-                        lat["fyers_to_system_s"] = script_arrival - fyers_ts
-                    if script_arrival and redis_pub:
-                        lat["system_to_redis_s"] = redis_pub - script_arrival
-                    if redis_pub:
-                        lat["redis_to_websocket_s"] = server_receive_time - redis_pub
-                    if fyers_ts and server_receive_time:
-                        lat["end_to_end_s"] = server_receive_time - fyers_ts
-                except Exception:
-                    pass
-
-                obj["server_latencies"] = lat
-
-                # time right before sending out to client
-                obj["server_send_time"] = time.time()
-
-                # send JSON string to client
-                await websocket.send_text(json.dumps(obj))
+            # send an incremental update (or the raw payload if no symbol present)
+            await websocket.send_json({"type": "update", "symbol": symbol, "data": payload, "ts": time.time()})
 
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:
         print(f"WebSocket Error: {e}")
     finally:
-        # Cleanup connection when client leaves
         await pubsub.unsubscribe("channel:live_feed")
         await r_async.close()

@@ -3,7 +3,7 @@ import redis
 from core.user import access_token
 import json
 import threading
-import time
+
 # Connect to Redis running in Docker
 r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
 
@@ -20,24 +20,6 @@ def on_depth_update(ticker, message):
     
     try:
         # create clean dict payload from fyers object
-        # Record the time the message arrived locally (server system time in seconds float)
-        script_arrival_time = time.time()
-
-        # Normalize message timestamp from fyers. The SDK may provide seconds or milliseconds.
-        fyers_timestamp = None
-        try:
-            fyers_timestamp = float(getattr(message, 'timestamp', None))
-            # If timestamp looks like milliseconds (large number) convert to seconds
-            if fyers_timestamp and fyers_timestamp > 1e12:
-                fyers_timestamp = fyers_timestamp / 1000.0
-        except Exception:
-            # If SDK uses dict-like message, try index access
-            try:
-                fyers_timestamp = float(message['timestamp'])
-                if fyers_timestamp and fyers_timestamp > 1e12:
-                    fyers_timestamp = fyers_timestamp / 1000.0
-            except Exception:
-                fyers_timestamp = None
         payload = {
             "symbol": ticker,
             "timestamp": message.timestamp,
@@ -46,39 +28,18 @@ def on_depth_update(ticker, message):
             "bids": message.bidprice, # List of 50 bid prices
             "asks": message.askprice, # List of 50 ask prices
             "bid_qty": message.bidqty,
-            "ask_qty": message.askqty,
-            "script_arrival_time": script_arrival_time,
-            "fyers_timestamp": fyers_timestamp
+            "ask_qty": message.askqty
         }
         # seialize to json string (like redis needs srting)
-        # Add a timestamp that marks when we publish to Redis (this helps measure system->redis latency)
-        redis_publish_time = time.time()
-        payload["redis_publish_time"] = redis_publish_time
-
-        # Serialize to json string (Redis pub/sub expects a string payload)
         json_payload = json.dumps(payload)
 
-        # publish for realtime UI (fire-and-forget)
+        # publish for relatime ui (fire and forget)
         r.publish("channel:live_feed", json_payload)
 
-        # push to stream for strategy (persistence/history)
+        # push to stream for strategy (peristentence/histroy)
         # Strategies read from stream "stream:ticks"
         # We push a dictionary where the key is 'data' and value is the JSON string
-        # The returned stream id can be used as a reference for later latency checks
-        stream_id = r.xadd("stream:ticks", {"data": json_payload}, maxlen=10000)
-
-        # Optional debug logs: compute some immediate latencies (if fyers timestamp exists)
-        try:
-            if fyers_timestamp:
-                fyers_to_system = script_arrival_time - fyers_timestamp
-            else:
-                fyers_to_system = None
-            system_to_redis = redis_publish_time - script_arrival_time
-            # print debug for observability - remove or route to proper logging in prod
-            print(f"tick {ticker} id={stream_id} fyers_to_system={fyers_to_system:.6f if fyers_to_system is not None else 'N/A'}s system_to_redis={system_to_redis:.6f}s")
-        except Exception:
-            # keep ingestion tolerant
-            pass
+        r.xadd("stream:ticks", {"data": json_payload}, maxlen=10000)
     except Exception as e:
         print(f"Error pushing to Redis: {e}")
 
@@ -154,4 +115,4 @@ def start_socket_process():
     def stop_after_delay(seconds):
         threading.Timer(seconds, lambda: fyers_socket.close_connection()).start()
 
-    stop_after_delay(600)
+    stop_after_delay(30)
