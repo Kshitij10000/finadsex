@@ -34,7 +34,7 @@ def onopen():
     fyers_standard_websocket.keep_running()
 
 
-def fyers_connection():
+def fyers_standard_connection():
 
     global fyers_standard_websocket
     fyers_standard_websocket = data_ws.FyersDataSocket(
@@ -59,5 +59,5 @@ def fyers_connection():
     stop_after_delay(7200)
 
 if __name__ == "__main__":
-    fyers_connection()
+    fyers_standard_connection()
     

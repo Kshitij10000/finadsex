@@ -71,7 +71,7 @@ def onerror_message(message):
     print("Error Message:", message)
 
 
-def start_socket_process():
+def fyers_tbt_connection():
 
     global fyers_socket
     fyers_socket = FyersTbtSocket(
@@ -96,4 +96,4 @@ def start_socket_process():
     stop_after_delay(7200)
 
 if __name__ == "__main__":
-    start_socket_process()
+    fyers_tbt_connection()
