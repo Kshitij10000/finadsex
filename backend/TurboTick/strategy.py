@@ -1,6 +1,5 @@
 # TurboTick/strategy.py
 import time
-import threading
 from TurboTick.state import market_data, market_depth, log_queue, current_position, WEIGHTS, data_lock
 from TurboTick.logger import trade_logger
 
@@ -36,29 +35,30 @@ def calculate_synthetic_velocity(snapshot, prev_snapshot):
     return velocity
 
 def execute_mock_trade(action, symbol, price):
+
     if action == "BUY":
         current_position["active"] = True
         current_position["symbol"] = symbol
         current_position["entry_price"] = price
         current_position["type"] = "CE" if "CE" in symbol else "PE"
-        
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         # LOGS TO FILE INSTANTLY
         trade_logger.info(f"🔵 ENTRY | {action} {symbol} | Price: {price}")
         
     elif action == "SELL":
         entry = current_position["entry_price"]
-        pnl = (price - entry) if current_position["type"] == "CE" else (entry - price)
+        pnl = price - entry
         pnl *= 25  # Lot size
         current_position["active"] = False
         current_position["symbol"] = None
         current_position["entry_price"] = 0.0
-        
+        # <>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         icon = "✅" if pnl > 0 else "❌"
         trade_logger.info(f"{icon} EXIT  | {symbol} | Price: {price} | PnL: {pnl:.2f}")
 
 
 def run_strategy(ce_symbol, pe_symbol):
-    
+     # <>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     trade_logger.info(f"--- 🚀 STRATEGY STARTED: {ce_symbol} & {pe_symbol} ---")
     trade_logger.info("🧪 SYSTEM CHECK: This log confirms 'trades.log' is writable.")
     
