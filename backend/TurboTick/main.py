@@ -1,51 +1,21 @@
 # TurboTick/main.py
 import threading
 import time
-from TurboTick.state import log_queue
-from TurboTick.fyers_std_connector import fyers_connection
-from TurboTick.fyers_tbt_connector import start_socket_process, ce, pe
+from TurboTick.fyers_std_connector import fyers_standard_connection
+from TurboTick.fyers_tbt_connector import fyers_tbt_connection
 from TurboTick.strategy import run_strategy
-from TurboTick.logger import log_listener
-
-def logger_worker():
-    """
-    Dedicated thread to print logs.
-    Keeps the UI separate from the Algo.
-    """
-    while True:
-        try:
-            msg = log_queue.get()
-            if msg:
-                print(msg)
-        except:
-            pass
-
+from TurboTick.fyers_tbt_connector import ce, pe
 
 if __name__ == "__main__":
-
-    log_listener.start()
-    print("--- 🚀 STARTING TURBOTICK SIMULATION ---")
-    print(f"Targeting: {ce} & {pe}")
-
-    # 1. Start Logger
-    t_log = threading.Thread(target=logger_worker, daemon=True)
-    t_log.start()
-
-    # 2. Start Components Data (Standard Socket)
-    t_std = threading.Thread(target=fyers_connection, daemon=True)
-    t_std.start()
     
-    # 3. Start Options Data (TBT Socket)
-    t_tbt = threading.Thread(target=start_socket_process, daemon=True)
-    t_tbt.start()
-
-    # Wait for sockets to warm up (populate market_data)
-    print("Waiting 5s for buffers to fill...")
-    time.sleep(5)
-
-    # 4. Start Strategy
-    try:
-        run_strategy(ce, pe)
-    except KeyboardInterrupt:
-        print("Shutting down...")
-        log_listener.stop()
+    # 1. Start Sockets (Background)
+    t1 = threading.Thread(target=fyers_standard_connection, daemon=True)
+    t1.start()
+    
+    t2 = threading.Thread(target=fyers_tbt_connection, daemon=True)
+    t2.start()
+    
+    # 2. Start Strategy (Background)
+    t_strat = threading.Thread(target=run_strategy, args=(ce, pe), daemon=True)
+    t_strat.start()
+    
