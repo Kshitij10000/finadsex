@@ -1,7 +1,8 @@
 # TurboTick/state.py
-
 import threading
 import queue
+
+
 # we will store the latest market data here in dictionary
 # access time : ~50 nanoseconds (very fast).
 # no db calls, no file i/o, just in-memory operations
@@ -24,6 +25,7 @@ market_data = {
     # "NSE:BANKBARODA-EQ": 0.0,
     # "NSE:CANBK-EQ": 0.0
 }
+
 # 2. Market Depth   (For Options Execution)
 market_depth = {} 
 
@@ -55,9 +57,32 @@ current_position = {
     "symbol": None,
     "entry_price": 0.0,
     "quantity": 0,
-    "type": None # "CE" or "PE"
+    "type": None, # "BUY" or "SELL"
 }
 
+
+class Order:
+    __slots__ = ['order_id', 'symbol', 'price', 'qty', 'status', 'timestamp']
+
+    def __init__(self, order_id, symbol, price, qty, status, timestamp):
+        self.order_id = order_id
+        self.symbol = symbol
+        self.price = price
+        self.qty = qty
+        self.status = status
+        self.timestamp = timestamp
+    
+    def to_dict(self):
+        return {
+            "order_id": self.order_id, 
+            "symbol": self.symbol, 
+            "price": self.price, 
+            "qty": self.qty, 
+            "status": self.status,
+            "timestamp": self.timestamp
+        }  
+    
+    
 # 6. Track money
 account_metrics = {
     "realized_pnl": 0.0,  # Money banked

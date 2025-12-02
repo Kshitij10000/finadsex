@@ -1,0 +1,9 @@
+<<Issues To Fix>>
+
+1. BUG : PE BUG
+2. BUG : Fix P&L state
+3. FEATURE:  Push State to Redis for UI
+4. REFACTOR: Eliminate console prints in connectors, use Redis/Queue instead
+5. REFACTOR:  Replace 0.1s polling loop with event-driven execution
+6. REFACTOR: Fix object creation in payload of on_depth_update/
+7. 

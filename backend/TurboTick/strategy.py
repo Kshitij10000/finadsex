@@ -1,12 +1,17 @@
 # TurboTick/strategy.py
 import time
-from TurboTick.state import market_data, market_depth, log_queue, current_position, WEIGHTS, data_lock
-from TurboTick.logger import trade_logger
+from TurboTick.state import market_data, market_depth, log_queue, current_position, WEIGHTS, data_lock, Order
+import redis
+import json
+
+# redis client for storing orders
+r = redis.Redis(host="localhost", port=6379, db=0)
 
 # CONFIGURATION
 MOMENTUM_THRESHOLD = 0.001  # Sensitivity (Needs tuning via backtesting)
 TARGET_PROFIT = 2.0        # Points
 STOP_LOSS = 1.0            # Points
+
 
 def calculate_synthetic_velocity(snapshot, prev_snapshot):
     """
@@ -36,31 +41,37 @@ def calculate_synthetic_velocity(snapshot, prev_snapshot):
 
 def execute_mock_trade(action, symbol, price):
 
+    order_id = f"{int(time.time() * 1000)}"
+
     if action == "BUY":
-        current_position["active"] = True
-        current_position["symbol"] = symbol
-        current_position["entry_price"] = price
-        current_position["type"] = "CE" if "CE" in symbol else "PE"
-        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # LOGS TO FILE INSTANTLY
-        trade_logger.info(f"🔵 ENTRY | {action} {symbol} | Price: {price}")
+        order = Order(order_id, symbol, price, 1, "BUY", time.time())
+        current_position.update({
+            "active": True,
+            "symbol": symbol,
+            "entry_price": price,
+            "quantity": 1,
+            "type": "BUY"
+        })
+
         
     elif action == "SELL":
-        entry = current_position["entry_price"]
-        pnl = price - entry
-        pnl *= 25  # Lot size
-        current_position["active"] = False
-        current_position["symbol"] = None
-        current_position["entry_price"] = 0.0
-        # <>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        icon = "✅" if pnl > 0 else "❌"
-        trade_logger.info(f"{icon} EXIT  | {symbol} | Price: {price} | PnL: {pnl:.2f}")
+        order = Order(order_id, symbol, price, 1, "SELL", time.time())
+        current_position.update({
+            "active": False,
+            "symbol": None,
+            "entry_price": 0.0,
+            "quantity": 0,
+            "type": "SELL"
+        })
+
+    r.rpush("executed_orders", json.dumps(order.to_dict()))
 
 
 def run_strategy(ce_symbol, pe_symbol):
-     # <>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    trade_logger.info(f"--- 🚀 STRATEGY STARTED: {ce_symbol} & {pe_symbol} ---")
-    trade_logger.info("🧪 SYSTEM CHECK: This log confirms 'trades.log' is writable.")
+    
+    print("🚀 STRATEGY STARTED: {ce_symbol} & {pe_symbol}")
+    print("--------------------------------")
+    print("--------------------------------")
     
     prev_prices = market_data.copy()
     

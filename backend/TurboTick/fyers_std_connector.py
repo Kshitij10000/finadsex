@@ -9,7 +9,6 @@ from TurboTick.state import market_data, data_lock
 fyers_std_websocket = None
 
 def onmessage(message):
-    print(message)
     if isinstance(message, dict) and 'symbol' in message and 'ltp' in message:
         symbol = message['symbol']
         ltp = float(message['ltp'])
