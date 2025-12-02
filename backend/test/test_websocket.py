@@ -54,13 +54,14 @@ def onopen():
 
 
 # Replace the sample access token with your actual access token obtained from Fyers
-access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZDoxIiwiZDoyIiwieDowIiwieDoxIiwieDoyIl0sImF0X2hhc2giOiJnQUFBQUFCcEtSeWpmN1NrUG0zUkhES1ZxcHlqejB1S25DS0pXaXgzYzl1OVY2SDM4MTJKbHd4ZzZJZnUzamdZRGRWakkzZmE5T2hjTTFfZlBjVGVreHBSRGZQVHZzZ1RoUG0zY19nSVNuSXJkdXpjNTA0XzFqcz0iLCJkaXNwbGF5X25hbWUiOiIiLCJvbXMiOiJLMSIsImhzbV9rZXkiOiJlNTI5ZmRlY2IxNTQzNDcxYTZhMzQ3ZjdjYzg1ZTczMGQzNDZmNWE5ZjFjYzM4ZWUyZWRmZDQwMSIsImlzRGRwaUVuYWJsZWQiOiJOIiwiaXNNdGZFbmFibGVkIjoiTiIsImZ5X2lkIjoiWEswMzA2MSIsImFwcFR5cGUiOjEwMCwiZXhwIjoxNzY0Mzc2MjAwLCJpYXQiOjE3NjQzMDE5ODcsImlzcyI6ImFwaS5meWVycy5pbiIsIm5iZiI6MTc2NDMwMTk4Nywic3ViIjoiYWNjZXNzX3Rva2VuIn0.phRHIsOZ_quV95KF09Uf42TCBtSMWYmsXFpjy8Tti3U"
+from TurboTick.config import ACCESS_TOKEN
+access_token = ACCESS_TOKEN
 
 # Create a FyersDataSocket instance with the provided parameters
 fyers = data_ws.FyersDataSocket(
     access_token=access_token,       # Access token in the format "appid:accesstoken"
     log_path="",                     # Path to save logs. Leave empty to auto-create logs in the current directory.
-    litemode=False,                  # Lite mode disabled. Set to True if you want a lite response.
+    litemode=True,                  # Lite mode disabled. Set to True if you want a lite response.
     write_to_file=False,              # Save response in a log file instead of printing it.
     reconnect=True,                  # Enable auto-reconnection to WebSocket on disconnection.
     on_connect=onopen,               # Callback function to subscribe to data upon connection.
@@ -103,4 +104,4 @@ import threading
 def stop_after_delay(seconds):
     threading.Timer(seconds, lambda: fyers.close_connection()).start()
 
-stop_after_delay(60)  # Stop after 60 seconds
+stop_after_delay(600)  # Stop after 60 seconds

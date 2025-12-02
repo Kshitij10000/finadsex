@@ -11,7 +11,7 @@ def onopen():
     mode = SubscriptionModes.DEPTH
     Channel = '1'
     # Subscribe to the specified symbols and data type
-    symbols = ['NSE:HDFCBANK-EQ','NSE:ICICIBANK-EQ','NSE:SBIN-EQ','NSE:KOTAKBANK-EQ','NSE:AXISBANK-EQ']
+    symbols = ['NSE:NIFTYBANK-INDEX','NSE:BANKNIFTY25DECFUT','NSE:BANKNIFTY25DEC59800CE','NSE:BANKNIFTY25DEC59800PE']
     
     
     fyers.subscribe(symbol_tickers=symbols, channelNo=Channel, mode=mode)
@@ -91,4 +91,4 @@ import threading
 def stop_after_delay(seconds):
     threading.Timer(seconds, lambda: fyers.close_connection()).start()
 
-stop_after_delay(150)  # Stop after 15 seconds
+stop_after_delay(15)  # Stop after 15 seconds

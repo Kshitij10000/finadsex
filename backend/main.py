@@ -10,21 +10,21 @@ import time
 
 r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # --- STARTUP LOGIC ---
-    print("FastAPI Starting... Launching Fyers WebSocket in background thread.")
-    # Create a daemon thread (Daemon means it dies when the main app dies)
-    tbt_thread = threading.Thread(target=start_socket_process, daemon=True)
-    tbt_thread.start()
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     # --- STARTUP LOGIC ---
+#     print("FastAPI Starting... Launching Fyers WebSocket in background thread.")
+#     # Create a daemon thread (Daemon means it dies when the main app dies)
+#     tbt_thread = threading.Thread(target=start_socket_process, daemon=True)
+#     tbt_thread.start()
     
-    yield # The app runs here
+#     yield # The app runs here
     
-    # --- SHUTDOWN LOGIC ---
-    print("FastAPI Shutting down... cleaning up resources.")
-    # (Optional: Logic to explicitly close socket if needed)
+#     # --- SHUTDOWN LOGIC ---
+#     print("FastAPI Shutting down... cleaning up resources.")
+#     # (Optional: Logic to explicitly close socket if needed)
 
-app = FastAPI(title="FINADSEX Backend",version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="FINADSEX Backend",version="1.0.0")
     
 @app.get("/")
 def read_root():

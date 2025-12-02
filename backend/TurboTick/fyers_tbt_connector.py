@@ -1,17 +1,17 @@
+# TurboTick/fyers_tbt_connector.py
 from fyers_apiv3.FyersWebsocket.tbt_ws import FyersTbtSocket, SubscriptionModes
-import redis
-from core.user import access_token
+from TurboTick.config import ACCESS_TOKEN
 import json
 import threading
-
-# Connect to Redis running in Docker
-r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+from TurboTick.state import market_depth , data_lock
 
 
-fyers_socket = None
+fyers_tbt_socket = None
+current_bank_nifty_price = 59600 # Ideally fetch this live via API once before starting
 
-def get_options_symbols(current_price):
-    atm_strike = round(current_price / 100) * 100
+
+def get_options_symbols(spot_price):
+    atm_strike = round(spot_price / 100) * 100
     ce_symbol = f'NSE:BANKNIFTY25DEC{atm_strike}CE'
     pe_symbol = f'NSE:BANKNIFTY25DEC{atm_strike}PE'
     return ce_symbol, pe_symbol
@@ -30,27 +30,22 @@ def on_depth_update(ticker, message):
             "bid_qty": message.bidqty,
             "ask_qty": message.askqty
         }
-        # seialize to json string (like redis needs srting)
-        json_payload = json.dumps(payload)
-
-        # publish for relatime ui (fire and forget)
-        r.publish("channel:live_feed", json_payload)
-
-        # push to stream for strategy (peristentence/histroy)
-        # Strategies read from stream "stream:ticks"
-        # We push a dictionary where the key is 'data' and value is the JSON string
-        r.xadd("stream:ticks", {"data": json_payload}, maxlen=10000)
+        with data_lock:
+            market_depth[ticker] = payload
+        
     except Exception as e:
         print(f"Error pushing to Redis: {e}")
-
+        
+ce, pe = get_options_symbols(current_bank_nifty_price)
 
 def onopen():
     print("Connection opened")
 
     # Dynamic Symbol Selection Logic
-    current_bank_nifty_price = 59850 # Ideally fetch this live via API once before starting
+    # Dynamic Symbol Selection Logic
+
     BankNiftyFutures = 'NSE:BANKNIFTY25DECFUT'
-    ce, pe = get_options_symbols(current_bank_nifty_price)
+    
     
     symbols = [BankNiftyFutures, ce, pe]
     print(f"Subscribing to: {symbols}")
@@ -66,30 +61,13 @@ def onopen():
     fyers_socket.keep_running()
 
 def onerror(message):
-    """
-    Callback function to handle WebSocket errors.
-
-    Parameters:
-        message (dict): The error message received from the WebSocket.
-
-    """
     print("Error:", message)
 
 
 def onclose(message):
-    """
-    Callback function to handle WebSocket connection close events.
-    """
     print("Connection closed:", message)
 
 def onerror_message(message):
-    """
-    Callback function for error message events from the server
-
-    Parameters:
-        message (dict): The error message received from the Server.
-
-    """
     print("Error Message:", message)
 
 
@@ -97,7 +75,7 @@ def start_socket_process():
 
     global fyers_socket
     fyers_socket = FyersTbtSocket(
-        access_token=access_token,  # Your access token for authenticating with the Fyers API.
+        access_token=ACCESS_TOKEN,  # Your access token for authenticating with the Fyers API.
         write_to_file=False,        # A boolean flag indicating whether to write data to a log file or not.
         log_path="",                # The path to the log file if write_to_file is set to True (empty string means current directory).
         on_open=onopen,          # Callback function to be executed upon successful WebSocket connection.
@@ -115,4 +93,7 @@ def start_socket_process():
     def stop_after_delay(seconds):
         threading.Timer(seconds, lambda: fyers_socket.close_connection()).start()
 
-    stop_after_delay(150)
+    stop_after_delay(7200)
+
+if __name__ == "__main__":
+    start_socket_process()

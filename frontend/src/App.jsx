@@ -14,29 +14,61 @@ const WS_URL = 'ws://localhost:8000/ws/live-feed';
 const AppContent = () => {
   const { data, connectionStatus, error } = useWebSocket(WS_URL);
   const [selectedTicker, setSelectedTicker] = useState(null);
+  const [allTickers, setAllTickers] = useState({});
 
-  // Extract all tickers from the nested data structure
-  const tickers = useMemo(() => {
-    if (!data) return [];
+  // Process incoming WebSocket data
+  useEffect(() => {
+    if (!data) return;
 
-    // Handle snapshot format: { type, tickers, data: { symbol: { tick_id, data: {...} } } }
     if (data.type === 'snapshot' && data.data) {
-      return Object.entries(data.data).map(([symbol, tickerInfo]) => ({
-        symbol,
-        ...tickerInfo.data, // Extract the actual ticker data
-        server_latencies: data.server_latencies,
-        server_receive_time: data.server_receive_time,
-        server_send_time: data.server_send_time,
+      // Full snapshot: Replace all tickers
+      const snapshot = {};
+      Object.entries(data.data).forEach(([symbol, tickerInfo]) => {
+        snapshot[symbol] = {
+          symbol,
+          ...tickerInfo.data, // Unwrap nested data
+          server_latencies: data.server_latencies,
+          server_receive_time: data.server_receive_time,
+          server_send_time: data.server_send_time,
+        };
+      });
+      setAllTickers(snapshot);
+    } else if (data.type === 'update' && data.data) {
+      // Update: Merge into existing tickers
+      // The update format seems to be: { type: 'update', symbol: '...', data: { symbol: '...', ... } }
+      // Or sometimes just the inner object if the backend structure varies.
+      // Based on logs: { type: 'update', symbol: '...', data: { symbol: '...', ... } }
+
+      const updateData = data.data;
+      const symbol = updateData.symbol;
+
+      if (symbol) {
+        setAllTickers(prev => ({
+          ...prev,
+          [symbol]: {
+            ...prev[symbol],
+            ...updateData,
+            // Preserve server times if not in update, or update them if they are
+            server_latencies: data.server_latencies || prev[symbol]?.server_latencies,
+            server_receive_time: data.server_receive_time || prev[symbol]?.server_receive_time,
+            server_send_time: data.server_send_time || prev[symbol]?.server_send_time,
+          }
+        }));
+      }
+    } else if (data.symbol) {
+      // Fallback for flat format if any
+      setAllTickers(prev => ({
+        ...prev,
+        [data.symbol]: {
+          ...prev[data.symbol],
+          ...data
+        }
       }));
     }
-
-    // Handle single ticker format (backward compatibility)
-    if (data.symbol) {
-      return [data];
-    }
-
-    return [];
   }, [data]);
+
+  // Convert map to array for rendering
+  const tickers = useMemo(() => Object.values(allTickers), [allTickers]);
 
   // Organize tickers: Futures first, then CE, then PE
   const organizedTickers = useMemo(() => {
@@ -49,8 +81,8 @@ const AppContent = () => {
   // Get selected ticker data for order book
   const selectedTickerData = useMemo(() => {
     if (!selectedTicker) return null;
-    return tickers.find(t => t.symbol === selectedTicker);
-  }, [selectedTicker, tickers]);
+    return allTickers[selectedTicker];
+  }, [selectedTicker, allTickers]);
 
   // Auto-select first Futures ticker on load
   useEffect(() => {
