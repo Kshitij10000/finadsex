@@ -8,7 +8,7 @@ import json
 r = redis.Redis(host="localhost", port=6379, db=0)
 
 # CONFIGURATION
-MOMENTUM_THRESHOLD = 0.001  # Sensitivity (Needs tuning via backtesting)
+MOMENTUM_THRESHOLD = 0.005  # Sensitivity (Needs tuning via backtesting)
 TARGET_PROFIT = 2.0        # Points
 STOP_LOSS = 1.0            # Points
 
@@ -44,18 +44,18 @@ def execute_mock_trade(action, symbol, price):
     order_id = f"{int(time.time() * 1000)}"
 
     if action == "BUY":
-        order = Order(order_id, symbol, price, 1, "BUY", time.time())
+        order = Order(order_id, symbol, price, 100, "BUY", time.time())
         current_position.update({
             "active": True,
             "symbol": symbol,
             "entry_price": price,
-            "quantity": 1,
+            "quantity": 100,
             "type": "BUY"
         })
 
         
     elif action == "SELL":
-        order = Order(order_id, symbol, price, 1, "SELL", time.time())
+        order = Order(order_id, symbol, price, 100, "SELL", time.time())
         current_position.update({
             "active": False,
             "symbol": None,

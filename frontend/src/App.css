@@ -232,17 +232,65 @@
   overflow: hidden;
 }
 
-/* Left Sidebar */
-.sidebar-left {
+/* Left Sidebar - Indices/Stocks */
+.sidebar-indices {
+  width: 250px;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* F&O Sidebar */
+.sidebar-fno {
   width: 280px;
   background-color: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
   overflow-y: auto;
   padding: 0.5rem;
-  /* Reduced padding */
   display: flex;
   flex-direction: column;
-  /* Removed gap */
+}
+
+/* Flash Animations */
+/* Flash Animations - Text Only, High Intensity */
+@keyframes flash-up {
+  0% {
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+  }
+
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+@keyframes flash-down {
+  0% {
+    color: #ff0000;
+    text-shadow: 0 0 10px #ff0000;
+  }
+
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+.flash-up {
+  animation: flash-up 0.8s ease-out;
+}
+
+.flash-down {
+  animation: flash-down 0.8s ease-out;
+}
+
+.price-bold {
+  font-weight: 800 !important;
+  font-size: 0.9rem !important;
 }
 
 .ticker-section {
@@ -288,7 +336,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -341,6 +389,26 @@
   overflow: hidden;
   border-right: 1px solid var(--border-color);
   /* Add border to separate from workspace */
+}
+
+/* Orders Sidebar (All Orders) */
+.sidebar-orders {
+  flex: 1;
+  background-color: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border-color);
+}
+
+/* Position Sidebar (Current Position) */
+.sidebar-position {
+  width: 300px;
+  background-color: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border-color);
 }
 
 .no-data-right {
@@ -482,19 +550,94 @@
   }
 }
 
-/* Scrollbar Styling */
-.sidebar-left::-webkit-scrollbar,
+/* Scrollbar Styling - Dark and Minimal */
+.sidebar-indices::-webkit-scrollbar,
+.sidebar-fno::-webkit-scrollbar,
+.sidebar-orderbook::-webkit-scrollbar,
+.sidebar-orders::-webkit-scrollbar,
+.sidebar-position::-webkit-scrollbar,
 .ob-list::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
+  /* Slightly wider for usability but dark */
 }
 
-.sidebar-left::-webkit-scrollbar-track,
+.sidebar-indices::-webkit-scrollbar-track,
+.sidebar-fno::-webkit-scrollbar-track,
+.sidebar-orderbook::-webkit-scrollbar-track,
+.sidebar-orders::-webkit-scrollbar-track,
+.sidebar-position::-webkit-scrollbar-track,
 .ob-list::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: #000;
+  /* Black track */
 }
 
-.sidebar-left::-webkit-scrollbar-thumb,
+.sidebar-indices::-webkit-scrollbar-thumb,
+.sidebar-fno::-webkit-scrollbar-thumb,
+.sidebar-orderbook::-webkit-scrollbar-thumb,
+.sidebar-orders::-webkit-scrollbar-thumb,
+.sidebar-position::-webkit-scrollbar-thumb,
 .ob-list::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 2px;
+  background: #333;
+  /* Dark thumb */
+  border-radius: 3px;
+}
+
+.sidebar-indices::-webkit-scrollbar-thumb:hover,
+.sidebar-fno::-webkit-scrollbar-thumb:hover,
+.sidebar-orderbook::-webkit-scrollbar-thumb:hover,
+.sidebar-orders::-webkit-scrollbar-thumb:hover,
+.sidebar-position::-webkit-scrollbar-thumb:hover,
+.ob-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Current Position Styles */
+.current-position-container {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.current-position-container.empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.no-position {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.position-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.position-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.position-row .label {
+  color: var(--text-secondary);
+}
+
+.position-row .value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.position-row .value.buy {
+  color: var(--buy-color);
+}
+
+.position-row .value.sell {
+  color: var(--sell-color);
 }

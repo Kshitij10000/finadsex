@@ -17,7 +17,7 @@ export const OrderBook = memo(({ bids, asks, bid_qty, ask_qty, symbol }) => {
       qty: ask_qty[idx] || 0
     }));
     // Sort descending: Highest price at top, lowest (best ask) at bottom
-    return items.sort((a, b) => b.price - a.price);
+    return items.sort((a, b) => b.price - a.price).slice(-20); // Show only top 20 (closest to spread)
   }, [asks, ask_qty]);
 
   const processedBids = useMemo(() => {
@@ -27,7 +27,7 @@ export const OrderBook = memo(({ bids, asks, bid_qty, ask_qty, symbol }) => {
       qty: bid_qty[idx] || 0
     }));
     // Sort descending: Highest price (best bid) at top, lowest at bottom
-    return items.sort((a, b) => b.price - a.price);
+    return items.sort((a, b) => b.price - a.price).slice(0, 20); // Show only top 20 (closest to spread)
   }, [bids, bid_qty]);
 
   // Auto-scroll to center (spread) when symbol changes or data loads

@@ -83,13 +83,5 @@ class Order:
         }  
     
     
-# 6. Track money
-account_metrics = {
-    "realized_pnl": 0.0,  # Money banked
-    "total_trades": 0,
-    "wins": 0,
-    "losses": 0
-}
-
 # global lock for thread-safe operations on market_data , cant read when writting data
 data_lock = threading.Lock()

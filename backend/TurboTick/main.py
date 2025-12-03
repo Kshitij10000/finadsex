@@ -7,6 +7,7 @@ from TurboTick.fyers_std_connector import fyers_standard_connection
 from TurboTick.fyers_tbt_connector import fyers_tbt_connection
 from TurboTick.strategy import run_strategy
 from TurboTick.fyers_tbt_connector import ce, pe
+from TurboTick.redis_service import sync_state_to_redis
 
 stop_event = threading.Event()
 
@@ -24,7 +25,9 @@ if __name__ == "__main__":
     t1 = threading.Thread(target=_run_with_stop, args=(fyers_standard_connection,), daemon=False)
     t2 = threading.Thread(target=_run_with_stop, args=(fyers_tbt_connection,), daemon=False)
     t_strat = threading.Thread(target=run_strategy, args=(ce, pe), daemon=False)
+    t_sync = threading.Thread(target=sync_state_to_redis, daemon=True)
 
+    t_sync.start()
     t1.start()
     t2.start()
     t_strat.start()

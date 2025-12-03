@@ -5,77 +5,72 @@ import { ConnectionStatus } from './components/ConnectionStatus';
 import { Settings } from './components/Settings';
 import { TickerListItem } from './components/TickerListItem';
 import { OrderBook } from './components/OrderBook';
+import { OrderList } from './components/OrderList';
 import { MarketStatus } from './components/MarketStatus';
+import { CurrentPosition } from './components/CurrentPosition';
 import './App.css';
 
-// Backend URL - adjust if needed
-const WS_URL = 'ws://localhost:8000/ws/live-feed';
+// Backend URL
+const WS_URL = 'ws://localhost:8000/ws/market_state';
 
 const AppContent = () => {
   const { data, connectionStatus, error } = useWebSocket(WS_URL);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [allTickers, setAllTickers] = useState({});
+  const [currentPosition, setCurrentPosition] = useState(null);
 
   // Process incoming WebSocket data
   useEffect(() => {
     if (!data) return;
 
-    if (data.type === 'snapshot' && data.data) {
-      // Full snapshot: Replace all tickers
-      const snapshot = {};
-      Object.entries(data.data).forEach(([symbol, tickerInfo]) => {
-        snapshot[symbol] = {
-          symbol,
-          ...tickerInfo.data, // Unwrap nested data
-          server_latencies: data.server_latencies,
-          server_receive_time: data.server_receive_time,
-          server_send_time: data.server_send_time,
-        };
+    // Handle market_data (LTP updates)
+    if (data.market_data) {
+      setAllTickers(prev => {
+        const next = { ...prev };
+        Object.entries(data.market_data).forEach(([symbol, price]) => {
+          next[symbol] = {
+            ...next[symbol],
+            symbol,
+            ltp: price,
+            // If we don't have depth yet, we might want to ensure the object exists
+          };
+        });
+        return next;
       });
-      setAllTickers(snapshot);
-    } else if (data.type === 'update' && data.data) {
-      // Update: Merge into existing tickers
-      // The update format seems to be: { type: 'update', symbol: '...', data: { symbol: '...', ... } }
-      // Or sometimes just the inner object if the backend structure varies.
-      // Based on logs: { type: 'update', symbol: '...', data: { symbol: '...', ... } }
-
-      const updateData = data.data;
-      const symbol = updateData.symbol;
-
-      if (symbol) {
-        setAllTickers(prev => ({
-          ...prev,
-          [symbol]: {
-            ...prev[symbol],
-            ...updateData,
-            // Preserve server times if not in update, or update them if they are
-            server_latencies: data.server_latencies || prev[symbol]?.server_latencies,
-            server_receive_time: data.server_receive_time || prev[symbol]?.server_receive_time,
-            server_send_time: data.server_send_time || prev[symbol]?.server_send_time,
-          }
-        }));
-      }
-    } else if (data.symbol) {
-      // Fallback for flat format if any
-      setAllTickers(prev => ({
-        ...prev,
-        [data.symbol]: {
-          ...prev[data.symbol],
-          ...data
-        }
-      }));
     }
+
+    // Handle market_depth (Full depth updates)
+    if (data.market_depth) {
+      setAllTickers(prev => {
+        const next = { ...prev };
+        Object.entries(data.market_depth).forEach(([symbol, depthData]) => {
+          next[symbol] = {
+            ...next[symbol],
+            ...depthData,
+            symbol, // Ensure symbol is set
+          };
+        });
+        return next;
+      });
+    }
+
+    // Handle current_position
+    if (data.current_position) {
+      setCurrentPosition(data.current_position);
+    }
+
   }, [data]);
 
   // Convert map to array for rendering
   const tickers = useMemo(() => Object.values(allTickers), [allTickers]);
 
-  // Organize tickers: Futures first, then CE, then PE
+  // Organize tickers: Futures first, then CE, then PE, then Index/Others
   const organizedTickers = useMemo(() => {
     const futures = tickers.filter(t => t.symbol?.includes('FUT'));
     const ce = tickers.filter(t => t.symbol?.includes('CE'));
     const pe = tickers.filter(t => t.symbol?.includes('PE'));
-    return { futures, ce, pe };
+    const others = tickers.filter(t => !t.symbol?.includes('FUT') && !t.symbol?.includes('CE') && !t.symbol?.includes('PE'));
+    return { futures, ce, pe, others };
   }, [tickers]);
 
   // Get selected ticker data for order book
@@ -84,7 +79,7 @@ const AppContent = () => {
     return allTickers[selectedTicker];
   }, [selectedTicker, allTickers]);
 
-  // Auto-select first Futures ticker on load
+  // Auto-select first Futures ticker on load if nothing selected
   useEffect(() => {
     if (!selectedTicker && organizedTickers.futures.length > 0) {
       setSelectedTicker(organizedTickers.futures[0].symbol);
@@ -109,7 +104,30 @@ const AppContent = () => {
       )}
 
       <div className="app-layout">
-        <aside className="sidebar-left">
+        {/* Column 1: Indices & Stocks */}
+        <aside className="sidebar-indices">
+          {organizedTickers.others.length > 0 && (
+            <div className="ticker-section">
+              <div className="section-label">Indices & Stocks</div>
+              {organizedTickers.others.map((tickerData) => (
+                <TickerListItem
+                  key={tickerData.symbol}
+                  tickerData={tickerData}
+                  onSelect={() => setSelectedTicker(tickerData.symbol)}
+                  isSelected={selectedTicker === tickerData.symbol}
+                />
+              ))}
+            </div>
+          )}
+          {organizedTickers.others.length === 0 && (
+            <div className="no-data-sidebar">
+              <p>Waiting for Indices...</p>
+            </div>
+          )}
+        </aside>
+
+        {/* Column 2: F&O (Futures, CE, PE) */}
+        <aside className="sidebar-fno">
           {organizedTickers.futures.length > 0 && (
             <div className="ticker-section">
               <div className="section-label">Futures</div>
@@ -151,14 +169,10 @@ const AppContent = () => {
               ))}
             </div>
           )}
-
-          {tickers.length === 0 && (
-            <div className="no-data-sidebar">
-              <p>Waiting for data...</p>
-            </div>
-          )}
         </aside>
 
+        {/* Column 3: Order Book */}
+        {/* Column 3: Order Book */}
         <aside className="sidebar-orderbook">
           {selectedTickerData ? (
             <OrderBook
@@ -175,9 +189,17 @@ const AppContent = () => {
           )}
         </aside>
 
-        <main className="workspace-area">
-          {/* Workspace area is empty for now */}
-        </main>
+        {/* Column 4: All Orders */}
+        <aside className="sidebar-orders">
+          <OrderList />
+        </aside>
+
+
+
+        {/* Column 5: Current Position */}
+        <aside className="sidebar-position">
+          <CurrentPosition position={currentPosition} />
+        </aside>
       </div>
     </div>
   );
