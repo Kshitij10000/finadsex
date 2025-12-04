@@ -8,9 +8,9 @@ import json
 r = redis.Redis(host="localhost", port=6379, db=0)
 
 # CONFIGURATION
-MOMENTUM_THRESHOLD = 0.005  # Sensitivity (Needs tuning via backtesting)
-TARGET_PROFIT = 2.0        # Points
-STOP_LOSS = 1.0            # Points
+MOMENTUM_THRESHOLD = 0.03  # Sensitivity (Needs tuning via backtesting)
+TARGET_PROFIT = 10.0        # Points
+STOP_LOSS = 5.0            # Points
 
 
 def calculate_synthetic_velocity(snapshot, prev_snapshot):
