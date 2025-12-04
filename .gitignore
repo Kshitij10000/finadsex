@@ -1,0 +1,11 @@
+node_modules
+.venv
+.vscode
+.env
+trades.log
+.log
+fyersDataSocket.log
+fyersTBTSocket.log
+__pycache__
+*.csv
+*.pyc
