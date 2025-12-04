@@ -12,7 +12,6 @@ market_data = {
 
     # Target Assets
     "NSE:NIFTYBANK-INDEX": 0.0, # spot index
-    "NSE:BANKNIFTY25DECFUT": 0.0, 
     # Components
     "NSE:HDFCBANK-EQ": 0.0,
     "NSE:ICICIBANK-EQ": 0.0,
@@ -55,11 +54,12 @@ log_queue = queue.Queue()
 current_position = {
     "active": False,
     "symbol": None,
-    "entry_price": 0.0,
+    "price": 0.0,
     "quantity": 0,
     "type": None, # "BUY" or "SELL"
 }
 
+positions = []
 
 class Order:
     __slots__ = ['order_id', 'symbol', 'price', 'qty', 'status', 'timestamp']

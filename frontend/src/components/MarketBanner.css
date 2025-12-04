@@ -1,0 +1,54 @@
+.market-banner-container {
+    width: 100%;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
+    white-space: nowrap;
+    height: 36px;
+    /* Fixed height */
+    display: flex;
+    align-items: center;
+}
+
+.market-banner-track {
+    display: inline-flex;
+    animation: banner-scroll 30s linear infinite;
+    padding-left: 100%;
+    /* Start from right */
+}
+
+/* Pause on hover for readability */
+.market-banner-container:hover .market-banner-track {
+    animation-play-state: paused;
+}
+
+.banner-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1.5rem;
+    border-right: 1px solid var(--border-color);
+}
+
+.banner-symbol {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.banner-price {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: 'Roboto Mono', monospace;
+}
+
+@keyframes banner-scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}

@@ -11,6 +11,13 @@ app = FastAPI(title="FINADSEX Backend",version="1.0.0")
 def read_root():
     return {"message": "Welcome to the FINADSEX Backend!"}
 
+@app.websocket("/ws")
+async def websocket_test(ws: WebSocket):
+    await ws.accept()
+    while True:
+        data = await ws.receive_text()
+        await ws.send_text(data)
+
 @app.websocket("/ws/orders")
 async def orders_ws(websocket: WebSocket):
     await websocket.accept()

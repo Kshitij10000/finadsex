@@ -8,6 +8,8 @@ import { OrderBook } from './components/OrderBook';
 import { OrderList } from './components/OrderList';
 import { MarketStatus } from './components/MarketStatus';
 import { CurrentPosition } from './components/CurrentPosition';
+import { MarketBanner } from './components/MarketBanner';
+import { IndicesTickerRow } from './components/IndicesTickerRow';
 import './App.css';
 
 // Backend URL
@@ -18,6 +20,7 @@ const AppContent = () => {
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [allTickers, setAllTickers] = useState({});
   const [currentPosition, setCurrentPosition] = useState(null);
+  const [positions, setPositions] = useState([]);
 
   // Process incoming WebSocket data
   useEffect(() => {
@@ -59,6 +62,11 @@ const AppContent = () => {
       setCurrentPosition(data.current_position);
     }
 
+    // Handle positions
+    if (data.positions) {
+      setPositions(data.positions);
+    }
+
   }, [data]);
 
   // Convert map to array for rendering
@@ -86,11 +94,38 @@ const AppContent = () => {
     }
   }, [selectedTicker, organizedTickers.futures]);
 
+  // Calculate Total Net PnL for Funds display
+  const totalNetPnL = useMemo(() => {
+    if (!positions || positions.length === 0) return 0;
+    return positions.reduce((acc, pos) => acc + (pos.net_pnl || 0), 0);
+  }, [positions]);
+
+  const STARTING_FUNDS = 98562;
+  const currentFunds = STARTING_FUNDS + totalNetPnL;
+
   return (
     <div className="app-minimal">
       <header className="app-header-minimal">
         <div className="app-name-small radium-text">FINADSEX</div>
         <div className="header-controls-minimal">
+          <div className="funds-display">
+            <div className="funds-group">
+              <span className="funds-label-small">STARTING FUNDS</span>
+              <span className="funds-value-small">{STARTING_FUNDS.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="funds-divider"></div>
+            <div className="funds-group">
+              <span className="funds-label-small">CURRENT FUNDS</span>
+              <span className="funds-value-highlight">{currentFunds.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+
+          <div className="user-profile-interactive">
+            <div className="user-avatar">KS</div>
+            <div className="user-name">KSHITIJ DILIP SARVE</div>
+            <div className="user-badge">PRO</div>
+          </div>
+
           <MarketStatus />
           <ConnectionStatus status={connectionStatus} />
           <Settings />
@@ -106,25 +141,21 @@ const AppContent = () => {
       <div className="app-layout">
         {/* Column 1: Indices & Stocks */}
         <aside className="sidebar-indices">
-          {organizedTickers.others.length > 0 && (
-            <div className="ticker-section">
-              <div className="section-label">Indices & Stocks</div>
-              {organizedTickers.others.map((tickerData) => (
-                <TickerListItem
-                  key={tickerData.symbol}
-                  tickerData={tickerData}
-                  onSelect={() => setSelectedTicker(tickerData.symbol)}
-                  isSelected={selectedTicker === tickerData.symbol}
-                />
-              ))}
-            </div>
-          )}
-          {organizedTickers.others.length === 0 && (
-            <div className="no-data-sidebar">
-              <p>Waiting for Indices...</p>
-            </div>
-          )}
+          <div className="indices-header">
+            <span className="col-symbol">SYMBOL</span>
+            <span className="col-last">LTP</span>
+          </div>
+          <div className="indices-list">
+            {organizedTickers.others.map((ticker) => (
+              <IndicesTickerRow key={ticker.symbol} ticker={ticker} />
+            ))}
+            {organizedTickers.others.length === 0 && (
+              <div className="no-data-sidebar">Waiting...</div>
+            )}
+          </div>
         </aside>
+
+        {/* Column 2: F&O (Futures, CE, PE) */}
 
         {/* Column 2: F&O (Futures, CE, PE) */}
         <aside className="sidebar-fno">
@@ -198,7 +229,7 @@ const AppContent = () => {
 
         {/* Column 5: Current Position */}
         <aside className="sidebar-position">
-          <CurrentPosition position={currentPosition} />
+          <CurrentPosition position={currentPosition} positions={positions} />
         </aside>
       </div>
     </div>

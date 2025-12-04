@@ -39,23 +39,21 @@
 /* Holographic Glow Animation */
 .radium-text {
   color: #fff;
-  /* The magic gradient */
+  /* The magic gradient - More vibrant */
   background: linear-gradient(135deg,
-      #fff 0%,
-      #fff 40%,
-      #4facfe 50%,
-      /* Flash of Blue */
-      #fbc2eb 60%,
-      /* Flash of Pink */
-      #fff 100%);
+      #ffffff 0%,
+      #ffffff 25%,
+      #00ffff 50%,
+      #ff00ff 75%,
+      #ffffff 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shine 5s ease-in-out infinite;
+  animation: shine 4s linear infinite;
 
-  /* Outer Glow */
-  filter: drop-shadow(0 0 10px rgba(79, 172, 254, 0.5));
+  /* Enhanced Neon Glow */
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 8px rgba(0, 255, 255, 0.6)) drop-shadow(0 0 15px rgba(255, 0, 255, 0.4));
 }
 
 @keyframes shine {
@@ -230,6 +228,7 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  /* Height is now calc(100vh - header - banner) handled by flex column in app-minimal */
 }
 
 /* Left Sidebar - Indices/Stocks */
@@ -237,11 +236,53 @@
   width: 250px;
   background-color: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
-  overflow-y: auto;
-  padding: 0.5rem;
   display: flex;
   flex-direction: column;
 }
+
+.indices-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.5px;
+}
+
+.indices-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.indices-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+
+.indices-row:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.col-symbol {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.col-last {
+  font-weight: 600;
+  color: #e0e0e0;
+  /* Professional off-white */
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+}
+
 
 /* F&O Sidebar */
 .sidebar-fno {
@@ -523,13 +564,7 @@
 }
 
 /* Background highlights for depth */
-.ob-row.ask-row {
-  /* position: relative; */
-}
 
-.ob-row.bid-row {
-  /* position: relative; */
-}
 
 /* Responsive */
 @media (max-width: 1024px) {
@@ -608,7 +643,17 @@
 .no-position {
   color: var(--text-tertiary);
   font-size: 0.875rem;
-  margin-top: 0.5rem;
+  background-color: var(--bg-tertiary);
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+  padding: 1rem;
+  text-align: center;
+  width: 80%;
+  margin: 0 auto;
+  /* Center horizontally */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .position-details {
@@ -640,4 +685,224 @@
 
 .position-row .value.sell {
   color: var(--sell-color);
+}
+
+.section-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 1rem 0;
+}
+
+.positions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.position-item {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.position-item .position-row {
+  margin-bottom: 0.25rem;
+}
+
+.position-item .position-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Golden Summary Card */
+.golden-summary-card {
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+  border: 1px solid #FFD700;
+  border-radius: 6px;
+  padding: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.15);
+  animation: golden-pulse 3s infinite alternate;
+}
+
+.golden-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  transform: skewX(-25deg);
+  animation: golden-shine 6s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes golden-pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+    border-color: #FFD700;
+  }
+
+  100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    border-color: #FFFACD;
+  }
+}
+
+@keyframes golden-shine {
+  0% {
+    left: -100%;
+  }
+
+  20%,
+  100% {
+    left: 200%;
+  }
+}
+
+.golden-text {
+  color: #FFD700 !important;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+.active-position-wrapper {
+  min-height: 130px;
+  /* Fixed height to prevent jumping */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* Center vertically for 'No Active Position' */
+}
+
+.active-position-wrapper .position-details {
+  margin-top: 0;
+  /* Reset margin since wrapper handles spacing */
+  justify-content: flex-start;
+}
+
+/* User Profile Name */
+.user-profile-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-right: 1rem;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  text-transform: uppercase;
+}
+
+/* Funds Display */
+.funds-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-right: 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.funds-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+
+.funds-label-small {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.funds-value-small {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.funds-value-highlight {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  /* Gold gradient for current funds */
+  background: linear-gradient(135deg, #FFD700, #FFFACD);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
+}
+
+.funds-divider {
+  width: 1px;
+  height: 24px;
+  background-color: var(--border-color);
+}
+
+/* Interactive User Profile */
+.user-profile-interactive {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: 1rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  /* Pill shape */
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-profile-interactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--text-tertiary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+
+.user-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.user-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #000;
+  background: #FFD700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
 }

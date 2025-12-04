@@ -1,8 +1,9 @@
 import { memo, useEffect, useState, useRef } from 'react';
 import { useWebSocket } from '../hooks/useWebsocket';
 
-// Backend URL for orders - adjust if needed
-const ORDERS_WS_URL = 'ws://localhost:8000/ws/orders';
+// Backend WebSocket URL for orders - prefer Vite env var
+const ORDERS_WS_BASE = import.meta.env.VITE_WS_BASE || import.meta.env.VITE_API_URL?.replace(/^http/, 'ws') || 'ws://localhost:8000';
+const ORDERS_WS_URL = `${ORDERS_WS_BASE.replace(/\/$/, '')}/ws/orders`;
 
 export const OrderList = memo(() => {
     const { data } = useWebSocket(ORDERS_WS_URL);
