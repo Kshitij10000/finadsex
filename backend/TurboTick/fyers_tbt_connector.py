@@ -7,7 +7,7 @@ from TurboTick.state import market_depth , data_lock
 
 
 fyers_tbt_socket = None
-current_bank_nifty_price = 59600 # Ideally fetch this live via API once before starting
+current_bank_nifty_price = 59300 # Ideally fetch this live via API once before starting
 
 
 def get_options_symbols(spot_price):

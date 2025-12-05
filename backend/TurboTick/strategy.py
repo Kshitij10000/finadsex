@@ -9,8 +9,8 @@ r = redis.Redis(host="localhost", port=6379, db=0)
 
 # CONFIGURATION
 MOMENTUM_THRESHOLD = 0.01  # Sensitivity (Needs tuning via backtesting)
-TARGET_PROFIT = 5.0        # Points
-STOP_LOSS = 2.0            # Points
+TARGET_PROFIT = 9.0        # Points
+STOP_LOSS = 3.0            # Points
 
 # Brokerage Calculator for Fyers 
 def calculate_trade_cost(buy_price,sell_price,quantity):
